@@ -124,15 +124,6 @@ test_data = [
         ValueError,
     ),
     (
-        "invalid pod template spec parameters",
-        {
-            "name": "test job",
-            "train_func": lambda: "test train function",
-            "job_kind": constants.MXJOB_KIND,
-        },
-        KeyError,
-    ),
-    (
         "paddle job can't be created using function",
         {
             "name": "test job",
@@ -168,9 +159,19 @@ test_data = [
             "namespace": "test",
             "train_func": lambda: print("Test Training Function"),
             "base_image": "docker.io/test-training",
-            "num_worker_replicas": "3",
+            "num_workers": 3,
             "packages_to_install": ["boto3==1.34.14"],
             "pip_index_url": "https://pypi.custom.com/simple",
+        },
+        "success",
+    ),
+    (
+        "valid flow to create job using image",
+        {
+            "name": "test-job",
+            "namespace": "test",
+            "base_image": "docker.io/test-training",
+            "num_workers": 2,
         },
         "success",
     ),
@@ -203,5 +204,5 @@ def test_create_job(training_client, test_name, kwargs, expected_output):
         training_client.create_job(**kwargs)
         assert expected_output == "success"
     except Exception as e:
-        assert type(e) == expected_output
+        assert type(e) is expected_output
     print("test execution complete")
