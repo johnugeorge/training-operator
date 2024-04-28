@@ -1,9 +1,12 @@
+import logging
+import json
+from typing import Union, Optional
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
+
 import transformers
 from peft import LoraConfig
-from urllib.parse import urlparse
-import json, os
-from typing import Union
+
 from .constants import VOLUME_PATH_DATASET, VOLUME_PATH_MODEL
 from .abstract_model_provider import modelProvider
 from .abstract_dataset_provider import datasetProvider
@@ -19,6 +22,17 @@ TRANSFORMER_TYPES = Union[
 ]
 
 
+# Configure logger.
+log_formatter = logging.Formatter(
+    "%(asctime)s %(levelname)-8s %(message)s", "%Y-%m-%dT%H:%M:%SZ"
+)
+logger = logging.getLogger(__file__)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(log_formatter)
+logger.addHandler(console_handler)
+logger.setLevel(logging.INFO)
+
+
 @dataclass
 class HuggingFaceModelParams:
     model_uri: str
@@ -32,7 +46,7 @@ class HuggingFaceModelParams:
 
 
 @dataclass
-class HuggingFaceTrainParams:
+class HuggingFaceTrainerParams:
     training_parameters: transformers.TrainingArguments = field(
         default_factory=transformers.TrainingArguments
     )
@@ -46,7 +60,8 @@ class HuggingFace(modelProvider):
 
     def download_model_and_tokenizer(self):
         # implementation for downloading the model
-        print("downloading model")
+        logger.info("Downloading model")
+        logger.info("-" * 40)
         transformer_type_class = getattr(transformers, self.config.transformer_type)
         parsed_uri = urlparse(self.config.model_uri)
         self.model = parsed_uri.netloc + parsed_uri.path
@@ -62,9 +77,11 @@ class HuggingFace(modelProvider):
 
 
 @dataclass
-class HfDatasetParams:
+class HuggingFaceDatasetParams:
     repo_id: str
-    access_token: str = None
+    access_token: Optional[str] = None
+    # TODO (andreyvelich): Discuss where we should specify dataset preprocess parameters.
+    split: Optional[str] = None
 
     def __post_init__(self):
         # Custom checks or validations can be added here
@@ -74,14 +91,17 @@ class HfDatasetParams:
 
 class HuggingFaceDataset(datasetProvider):
     def load_config(self, serialised_args):
-        self.config = HfDatasetParams(**json.loads(serialised_args))
+        self.config = HuggingFaceDatasetParams(**json.loads(serialised_args))
 
     def download_dataset(self):
-        print("downloading dataset")
+        logger.info("Downloading dataset")
+        logger.info("-" * 40)
         import huggingface_hub
         from datasets import load_dataset
 
         if self.config.access_token:
             huggingface_hub.login(self.config.access_token)
 
-        load_dataset(self.config.repo_id, cache_dir=VOLUME_PATH_DATASET)
+        # Load dataset and save to disk.
+        dataset = load_dataset(self.config.repo_id, split=self.config.split)
+        dataset.save_to_disk(VOLUME_PATH_DATASET)

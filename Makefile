@@ -37,7 +37,10 @@ help: ## Display this help.
 ##@ Development
 
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=training-operator webhook paths="./pkg/..." output:crd:artifacts:config=manifests/base/crds output:rbac:artifacts:config=manifests/base/rbac
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=training-operator webhook paths="./pkg/..." \
+		output:crd:artifacts:config=manifests/base/crds \
+		output:rbac:artifacts:config=manifests/base/rbac \
+		output:webhook:artifacts:config=manifests/base/webhook
 
 generate: controller-gen ## Generate apidoc, sdk and code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate/boilerplate.go.txt" paths="./pkg/apis/..."
@@ -57,12 +60,12 @@ vet: ## Run go vet against code.
 GOLANGCI_LINT=$(shell which golangci-lint)
 golangci-lint:
 ifeq ($(GOLANGCI_LINT),)
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.53.3
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.57.2
 	$(info golangci-lint has been installed)
 endif
-	golangci-lint run --timeout 5m --go 1.20 ./...
+	golangci-lint run --timeout 5m --go 1.22 ./...
 
-ENVTEST_K8S_VERSION ?= 1.27
+ENVTEST_K8S_VERSION ?= 1.29
 HAS_SETUP_ENVTEST := $(shell command -v setup-envtest;)
 
 testall: manifests generate fmt vet golangci-lint test ## Run tests.
@@ -72,7 +75,7 @@ test: envtest
 
 envtest:
 ifndef HAS_SETUP_ENVTEST
-	go install sigs.k8s.io/controller-runtime/tools/setup-envtest@116a1b831fffe7ccc3c8145306c3e1a3b1b14ffa # v0.15.0
+	go install sigs.k8s.io/controller-runtime/tools/setup-envtest@bf15e44028f908c790721fc8fe67c7bf2d06a611 # v0.17.2
 	@echo "setup-envtest has been installed"
 endif
 	@echo "setup-envtest has already installed"
@@ -108,7 +111,7 @@ PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	GOBIN=$(PROJECT_DIR)/bin go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.13.0
+	GOBIN=$(PROJECT_DIR)/bin go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.14.0
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.

@@ -18,7 +18,7 @@ TESTS_REQUIRES = [
     "pytest",
     "pytest-tornasync",
     "mypy",
-    "black==21.12b0",
+    "black==24.3.0",
     "flake==4.0.1",
 ]
 
@@ -27,7 +27,7 @@ REQUIRES = [
     "six>=1.10",
     "setuptools>=21.0.0",
     "urllib3>=1.15.1",
-    "kubernetes>=23.6.0",
+    "kubernetes>=27.2.0",
     "retrying>=1.3.3",
 ]
 
@@ -64,6 +64,6 @@ setuptools.setup(
     tests_require=TESTS_REQUIRES,
     extras_require={
         "test": TESTS_REQUIRES,
-        "huggingface": ["transformers>=4.20.0", "peft>=0.3.0"],
+        "huggingface": ["transformers==4.37.2", "peft==0.3.0"],
     },
 )
